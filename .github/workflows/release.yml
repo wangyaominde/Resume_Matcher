@@ -34,11 +34,13 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: app-${{ matrix.os }}
-        path: dist/app
+        path: dist/
 
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - name: Download artifacts
@@ -63,7 +65,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/app-macos-latest
+        asset_path: dist/app
         asset_name: app-macos
         asset_content_type: application/octet-stream
 
@@ -73,6 +75,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/app-windows-latest
+        asset_path: dist/app.exe
         asset_name: app-windows.exe
         asset_content_type: application/octet-stream
