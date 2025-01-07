@@ -3,13 +3,14 @@ name: Release Build
 on:
   push:
     tags:
-      - 'v*'  # 触发条件：当推送v开头的tag时
+      - 'v*'
 
 jobs:
   build:
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
+        extension: [mac, exe]
     runs-on: ${{ matrix.os }}
     
     steps:
@@ -34,7 +35,8 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: app-${{ matrix.os }}
-        path: dist/
+        path: |
+          dist/app${{ matrix.extension }}
 
   release:
     needs: build
@@ -59,22 +61,22 @@ jobs:
         draft: false
         prerelease: false
 
-    - name: Upload Release Asset
+    - name: Upload Release Assets
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/app
-        asset_name: app-macos
+        asset_path: dist/app-mac
+        asset_name: app-mac
         asset_content_type: application/octet-stream
 
-    - name: Upload Release Asset
+    - name: Upload Release Assets (Windows)
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/app.exe
+        asset_path: dist/app-windows.exe
         asset_name: app-windows.exe
         asset_content_type: application/octet-stream
