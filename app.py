@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                             QLabel, QFileDialog, QLineEdit, QMessageBox, QProgressBar, QGroupBox,
                             QListWidget, QListWidgetItem, QDialog)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMutex, QWaitCondition
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QPushButton, QTextEdit, QLabel, QFileDialog, QLineEdit, QMessageBox, QProgressBar
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMutex, QWaitCondition
 from dotenv import load_dotenv
@@ -619,6 +620,14 @@ class MainWindow(QMainWindow):
         
         # 顶部工具栏
         toolbar_layout = QHBoxLayout()
+        
+        # 添加logo
+        logo_label = QLabel()
+        logo_pixmap = QPixmap("logo.png")
+        scaled_logo = logo_pixmap.scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        logo_label.setPixmap(scaled_logo)
+        toolbar_layout.addWidget(logo_label)
+        
         toolbar_layout.addStretch()
         
         # 设置按钮
