@@ -620,14 +620,6 @@ class MainWindow(QMainWindow):
         
         # 顶部工具栏
         toolbar_layout = QHBoxLayout()
-        
-        # 添加logo
-        logo_label = QLabel()
-        logo_pixmap = QPixmap("logo.png")
-        scaled_logo = logo_pixmap.scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        logo_label.setPixmap(scaled_logo)
-        toolbar_layout.addWidget(logo_label)
-        
         toolbar_layout.addStretch()
         
         # 设置按钮
