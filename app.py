@@ -6,14 +6,14 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                             QListWidget, QListWidgetItem, QDialog)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMutex, QWaitCondition
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QPushButton, QTextEdit, QLabel, QFileDialog, QLineEdit, QMessageBox, QProgressBar
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMutex, QWaitCondition
 from dotenv import load_dotenv
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
+import chromadb
+from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
 import json
 from datetime import datetime
 import PyPDF2
@@ -34,16 +34,45 @@ class ResumeAssistant:
     API_BASE_URL = "https://api.deepseek.com"  # 固化的API URL
     
     def __init__(self):
-        # 初始化向量数据库
-        self.PERSIST_DIRECTORY = 'db'
+        # 获取运行目录
+        self.base_path = os.path.dirname(os.path.abspath(__file__))
+        
+        # 初始化向量数据库目录
+        self.PERSIST_DIRECTORY = os.path.join(self.base_path, 'db')
         if not os.path.exists(self.PERSIST_DIRECTORY):
             os.makedirs(self.PERSIST_DIRECTORY)
 
-        self.embedding = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        # 设置模型路径
+        model_name = "sentence-transformers/all-MiniLM-L6-v2"
+        local_model_path = os.path.join(self.base_path, "models", model_name)
+        
+        # 优先使用本地模型，如果本地没有则使用在线模型
+        if os.path.exists(local_model_path):
+            self.embedding = HuggingFaceEmbeddings(
+                model_name=local_model_path,
+                cache_folder=local_model_path
+            )
+        else:
+            self.embedding = HuggingFaceEmbeddings(
+                model_name=model_name
+            )
+
+        # 初始化 chromadb 客户端
+        client = chromadb.PersistentClient(path=self.PERSIST_DIRECTORY)
+        
+        # 使用 ONNX 嵌入函数
+        embedding_function = ONNXMiniLM_L6_V2()
+
+        # 初始化或获取集合
+        self.collection = client.get_or_create_collection(
+            name="resume_collection",
+            embedding_function=embedding_function
         )
+
+        # 初始化 Chroma
         self.vectordb = Chroma(
-            persist_directory=self.PERSIST_DIRECTORY,
+            client=client,
+            collection_name="resume_collection",
             embedding_function=self.embedding
         )
         
@@ -82,25 +111,26 @@ class ResumeAssistant:
         """保存API Key到数据库"""
         try:
             # 检查是否已存在API Key
-            collection = self.vectordb._collection
-            if collection:
-                results = collection.get()
-                if results and 'metadatas' in results:
+            if hasattr(self, 'collection'):
+                # 使用 chromadb 的原生方法查询
+                results = self.collection.get(
+                    where={"type": "api_key"}
+                )
+                if results and results['ids']:
                     # 删除旧的API Key
-                    ids_to_delete = []
-                    for i, metadata in enumerate(results['metadatas']):
-                        if metadata.get('type') == 'api_key':
-                            ids_to_delete.append(results['ids'][i])
-                    if ids_to_delete:
-                        collection.delete(ids_to_delete)
+                    self.collection.delete(
+                        ids=results['ids']
+                    )
             
             # 保存新的API Key
-            metadata = {
-                "type": "api_key",
-                "timestamp": datetime.now().isoformat()
-            }
-            self.vectordb.add_texts([api_key], metadatas=[metadata])
-            self.vectordb.persist()
+            self.collection.add(
+                documents=[api_key],
+                metadatas=[{
+                    "type": "api_key",
+                    "timestamp": datetime.now().isoformat()
+                }],
+                ids=[f"api_key_{datetime.now().timestamp()}"]
+            )
             return True
         except Exception as e:
             raise Exception(f"保存API Key失败: {str(e)}")
@@ -108,13 +138,12 @@ class ResumeAssistant:
     def get_api_key(self):
         """从数据库获取API Key"""
         try:
-            collection = self.vectordb._collection
-            if collection:
-                results = collection.get()
-                if results and 'metadatas' in results:
-                    for i, metadata in enumerate(results['metadatas']):
-                        if metadata.get('type') == 'api_key':
-                            return results['documents'][i]
+            if hasattr(self, 'collection'):
+                results = self.collection.get(
+                    where={"type": "api_key"}
+                )
+                if results and results['documents']:
+                    return results['documents'][0]
             return None
         except Exception:
             return None
@@ -327,6 +356,7 @@ class ResumeAssistant:
                     "timestamp": datetime.now().isoformat(),
                     "type": "resume_info"
                 }
+                doc_id = f"resume_{datetime.now().timestamp()}"
             else:
                 text = info.get("content", "")
                 metadata = {
@@ -334,10 +364,14 @@ class ResumeAssistant:
                     "type": "resume_info",
                     "file_name": info.get("file_name", "未命名简历")
                 }
+                doc_id = f"resume_{metadata['file_name']}_{datetime.now().timestamp()}"
             
             # 保存到向量数据库
-            self.vectordb.add_texts([text], metadatas=[metadata])
-            self.vectordb.persist()
+            self.collection.add(
+                documents=[text],
+                metadatas=[metadata],
+                ids=[doc_id]
+            )
             
             return True
         except Exception as e:
@@ -346,19 +380,20 @@ class ResumeAssistant:
     def delete_from_db(self, file_names):
         """从数据库中删除指定的简历"""
         try:
-            collection = self.vectordb._collection
-            if collection:
-                results = collection.get()
-                if results and 'metadatas' in results and 'ids' in results:
-                    # 找到要删除的简历索引和ID
+            if hasattr(self, 'collection'):
+                # 查找要删除的文档
+                results = self.collection.get(
+                    where={"type": "resume_info"}
+                )
+                if results and results['metadatas']:
+                    # 找到要删除的简历ID
                     ids_to_delete = []
                     for i, metadata in enumerate(results['metadatas']):
-                        if (metadata.get('type') == 'resume_info' and 
-                            metadata.get('file_name') in file_names):
+                        if metadata.get('file_name') in file_names:
                             ids_to_delete.append(results['ids'][i])
                     
                     if ids_to_delete:
-                        collection.delete(ids_to_delete)
+                        self.collection.delete(ids=ids_to_delete)
                         return len(ids_to_delete)
             return 0
         except Exception as e:
