@@ -34,6 +34,7 @@ class ResumeAssistant:
     API_BASE_URL = "https://api.deepseek.com"  # 固化的API URL
     
     def __init__(self):
+<<<<<<< Updated upstream
         # 获取运行目录
         self.base_path = os.path.dirname(os.path.abspath(__file__))
         
@@ -70,6 +71,34 @@ class ResumeAssistant:
         )
 
         # 初始化 Chroma
+=======
+        # 初始化向量数据库
+        self.PERSIST_DIRECTORY = 'db'
+        self.MODEL_DIRECTORY = 'models/sentence-transformers/all-MiniLM-L6-v2'
+        
+        # 创建必要的目录
+        for directory in [self.PERSIST_DIRECTORY, 'models/sentence-transformers']:
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+
+        # 初始化embedding模型
+        try:
+            # 优先使用本地模型
+            if os.path.exists(self.MODEL_DIRECTORY):
+                self.embedding = HuggingFaceEmbeddings(
+                    model_name=self.MODEL_DIRECTORY,
+                    cache_folder=self.MODEL_DIRECTORY
+                )
+            else:
+                # 如果本地没有，则从HuggingFace下载
+                self.embedding = HuggingFaceEmbeddings(
+                    model_name="sentence-transformers/all-MiniLM-L6-v2",
+                    cache_folder=self.MODEL_DIRECTORY
+                )
+        except Exception as e:
+            raise Exception(f"Embedding模型初始化失败: {str(e)}")
+
+>>>>>>> Stashed changes
         self.vectordb = Chroma(
             client=client,
             collection_name="resume_collection",

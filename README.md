@@ -36,8 +36,8 @@ pip install -r requirements.txt
 
 4. 配置环境变量（可选）：
 ```bash
-# 创建虚拟环境
-python -m venv venv
+pip install -r requirements.txt
+```
 
 # 激活虚拟环境
 # Windows:
@@ -45,8 +45,11 @@ venv\Scripts\activate
 # macOS/Linux:
 source venv/bin/activate
 
-# 安装依赖
-pip install -r requirements.txt
+在首次运行前，您需要：
+
+1. 下载模型到本地（仅需执行一次）：
+```bash
+python download_model.py
 ```
 
 

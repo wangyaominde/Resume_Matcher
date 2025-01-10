@@ -41,3 +41,6 @@ venv.bak/
 # System
 .DS_Store
 Thumbs.db
+
+# 数据库
+db/
