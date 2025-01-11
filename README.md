@@ -27,34 +27,29 @@ git clone https://github.com/wangyaominde/Resume_Matcher.git
 cd Resume_Matcher
 ```
 
-2. 安装依赖：
+2. 创建并激活虚拟环境：
 ```bash
-pip install -r requirements.txt
-```
-
-3. 配置 DeepSeek API：
-- 在应用程序设置中配置您的 DeepSeek API Key
-- API Key 将被安全加密存储
-
-4. 配置环境变量（可选）：
-```bash
-pip install -r requirements.txt
-```
+# 创建虚拟环境
+python -m venv venv
 
 # 激活虚拟环境
 # Windows:
 venv\Scripts\activate
 # macOS/Linux:
 source venv/bin/activate
-
-在首次运行前，您需要：
-
-1. 下载模型到本地（仅需执行一次）：
-```bash
-python download_model.py
 ```
 
-应用程序会按照以下顺序加载模型：
+3. 安装依赖：
+```bash
+# 确保在虚拟环境中安装依赖
+pip install -r requirements.txt
+```
+
+4. 配置 DeepSeek API：
+- 在应用程序设置中配置您的 DeepSeek API Key
+- API Key 将被安全加密存储在本地
+
+应用程序会自动按照以下顺序加载模型：
 1. 优先尝试从 HuggingFace 在线下载最新模型
 2. 如果在线下载失败，将尝试使用本地预下载的模型
 3. 如果两者都失败，程序会提示错误
