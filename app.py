@@ -35,12 +35,39 @@ class ResumeAssistant:
     def __init__(self):
         # 初始化向量数据库
         self.PERSIST_DIRECTORY = 'db'
-        if not os.path.exists(self.PERSIST_DIRECTORY):
-            os.makedirs(self.PERSIST_DIRECTORY)
+        self.MODEL_DIRECTORY = 'models/sentence-transformers/all-MiniLM-L6-v2'
+        self.MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+        
+        # 创建必要的目录
+        for directory in [self.PERSIST_DIRECTORY, 'models/sentence-transformers']:
+            if not os.path.exists(directory):
+                os.makedirs(directory)
 
-        self.embedding = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
-        )
+        # 初始化embedding模型
+        try:
+            # 优先尝试从网络加载模型
+            try:
+                print("正在从HuggingFace下载模型...")
+                self.embedding = HuggingFaceEmbeddings(
+                    model_name=self.MODEL_NAME,
+                    cache_folder=self.MODEL_DIRECTORY
+                )
+                print("模型下载成功")
+            except Exception as e:
+                print(f"从网络加载模型失败: {str(e)}")
+                # 如果网络加载失败，尝试使用本地模型
+                if os.path.exists(self.MODEL_DIRECTORY):
+                    print("使用本地模型...")
+                    self.embedding = HuggingFaceEmbeddings(
+                        model_name=self.MODEL_DIRECTORY,
+                        cache_folder=self.MODEL_DIRECTORY
+                    )
+                    print("本地模型加载成功")
+                else:
+                    raise Exception("无法加载模型：网络下载失败且本地模型不存在")
+        except Exception as e:
+            raise Exception(f"Embedding模型初始化失败: {str(e)}")
+
         self.vectordb = Chroma(
             persist_directory=self.PERSIST_DIRECTORY,
             embedding_function=self.embedding

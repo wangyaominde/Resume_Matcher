@@ -10,12 +10,14 @@
 - ✨ 智能简历生成
 - 💼 简历库管理
 - 🔐 安全的API密钥管理
+- 🌐 支持在线/离线模型加载
 
 ## 系统要求
 
 - Python 3.12
 - PyQt6
 - 操作系统：Windows/macOS/Linux
+- 磁盘空间：至少500MB（用于模型和数据存储）
 
 ## 安装说明
 
@@ -36,8 +38,8 @@ pip install -r requirements.txt
 
 4. 配置环境变量（可选）：
 ```bash
-# 创建虚拟环境
-python -m venv venv
+pip install -r requirements.txt
+```
 
 # 激活虚拟环境
 # Windows:
@@ -45,10 +47,17 @@ venv\Scripts\activate
 # macOS/Linux:
 source venv/bin/activate
 
-# 安装依赖
-pip install -r requirements.txt
+在首次运行前，您需要：
+
+1. 下载模型到本地（仅需执行一次）：
+```bash
+python download_model.py
 ```
 
+应用程序会按照以下顺序加载模型：
+1. 优先尝试从 HuggingFace 在线下载最新模型
+2. 如果在线下载失败，将尝试使用本地预下载的模型
+3. 如果两者都失败，程序会提示错误
 
 ## 使用说明
 
