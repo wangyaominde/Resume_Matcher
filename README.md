@@ -134,10 +134,6 @@ python app.py
 3. Q: 如何提高简历匹配度？
    A: 确保简历库中的简历内容完整，且与目标职位相关性高。
 
-## 许可证
-
-MIT License
-
 ## 联系方式
 
 如有问题或建议，请提交 Issue 或 Pull Request。
