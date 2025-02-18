@@ -27,7 +27,16 @@ git clone https://github.com/wangyaominde/Resume_Matcher.git
 cd Resume_Matcher
 ```
 
-2. 创建并激活虚拟环境：
+2. 使用一键运行脚本（推荐）：
+```bash
+# 首次运行会自动创建虚拟环境并安装依赖
+source run.sh
+
+# 后续运行将直接启动应用
+source run.sh
+```
+
+3. 手动安装（可选）：
 ```bash
 # 创建虚拟环境
 python -m venv venv
@@ -37,11 +46,8 @@ python -m venv venv
 venv\Scripts\activate
 # macOS/Linux:
 source venv/bin/activate
-```
 
-3. 安装依赖：
-```bash
-# 确保在虚拟环境中安装依赖
+# 安装依赖
 pip install -r requirements.txt
 ```
 
